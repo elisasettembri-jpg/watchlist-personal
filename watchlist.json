@@ -145,19 +145,5 @@
     "tipo": "privada",
     "sector": "Salud e IA",
     "signal": "nd"
-  },
-  {
-    "ticker": "MSFT",
-    "name": "test",
-    "tipo": "accion",
-    "sector": "Sin clasificar",
-    "signal": "nd"
-  },
-  {
-    "ticker": "MSFT",
-    "name": "test",
-    "tipo": "accion",
-    "sector": "Sin clasificar",
-    "signal": "nd"
   }
 ]
