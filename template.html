@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi watchlist</title>
+<style>
+  :root{
+    --bg:#0D1117; --panel:#151B24; --card:#1B222D; --line:#262F3B;
+    --text:#E6EAF0; --muted:#8A94A6; --mono:'SFMono-Regular',Consolas,'Courier New',monospace;
+    --green:#3ECF8E; --green-bg:#0F2A22; --amber:#F5A623; --amber-bg:#2E2408; --red:#FF6B6B; --red-bg:#331414;
+    --blue:#5B8DEF; --blue-bg:#0E1E33;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; margin:0; padding:20px 14px 60px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:18px;}
+  h1{font-size:20px; font-weight:600; margin:0 0 4px;}
+  .sub{color:var(--muted); font-size:12.5px;}
+  .toolbar{display:flex; gap:8px; align-items:center; margin:16px 0 20px; flex-wrap:wrap;}
+  button{font-family:inherit; cursor:pointer;}
+  .btn{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font-size:12.5px;}
+  .btn-add{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue); font-weight:600;}
+  select, input{background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:7px 9px; font-size:12.5px;}
+  .form-panel{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; display:none;}
+  .form-panel.open{display:block;}
+  .form-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:10px;}
+  .form-grid label{font-size:11px; color:var(--muted); display:block; margin-bottom:4px;}
+  .form-grid input, .form-grid select{width:100%;}
+  .msg{font-size:12px; padding:8px 10px; border-radius:6px; margin-top:8px;}
+  .msg.ok{background:var(--green-bg); color:var(--green);}
+  .msg.err{background:var(--red-bg); color:var(--red);}
+  section{margin-bottom:30px;}
+  .sec-title{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .sec-title h2{font-size:14px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin:0;}
+  .sec-title .count{font-size:11px; color:var(--muted);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:12px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; position:relative;}
+  .card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:8px 0 0 8px;}
+  .card.buy::before{background:var(--green);} .card.wait::before{background:var(--amber);}
+  .card.caution::before{background:var(--red);} .card.nd::before{background:var(--muted);}
+  .card-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;}
+  .ticker{font-family:var(--mono); font-size:16px; font-weight:700;}
+  .company{font-size:11px; color:var(--muted); margin-top:1px;}
+  .head-right{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .badge{font-size:10px; font-weight:700; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap;}
+  .badge.buy{background:var(--green-bg); color:var(--green);} .badge.wait{background:var(--amber-bg); color:var(--amber);}
+  .badge.caution{background:var(--red-bg); color:var(--red);} .badge.nd{background:var(--line); color:var(--muted);}
+  .btn-del{background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:6px; font-size:13px; width:24px; height:24px;}
+  .btn-del:hover{color:var(--red); border-color:var(--red);}
+  .field{padding:6px 0; border-top:1px solid var(--line); font-size:12px;}
+  .field .k{color:var(--muted); font-size:10px; text-transform:uppercase; margin-bottom:2px;}
+  .field .v{color:var(--text); line-height:1.5;} .field .v.nd{color:var(--muted); font-style:italic;}
+  .fdate{color:var(--muted); font-size:10px; margin-left:6px;}
+  .source{font-size:10px; color:var(--muted); padding:2px 0 4px;}
+  a{color:var(--blue);}
+  footer{border-top:1px solid var(--line); padding-top:14px; margin-top:10px; font-size:11.5px; color:var(--muted); line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Mi watchlist</h1>
+  <div class="sub">Ultima corrida automatica: <!--LAST-UPDATED--></div>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-add" id="btn-toggle-form">+ Agregar / sacar ticker</button>
+  <button class="btn" id="btn-refresh-now">Actualizar ahora</button>
+  <button class="btn" id="btn-token">Configurar acceso</button>
+</div>
+
+<div class="form-panel" id="token-panel">
+  <div class="form-grid">
+    <div style="grid-column:1/-1;">
+      <label>Token personal de GitHub (se guarda solo en este navegador)</label>
+      <input id="gh-token" type="password" placeholder="ghp_...">
+    </div>
+    <div><label>Usuario/organizacion</label><input id="gh-owner" placeholder="tuusuario"></div>
+    <div><label>Nombre del repo</label><input id="gh-repo" placeholder="watchlist-personal"></div>
+  </div>
+  <button class="btn btn-add" id="btn-save-token">Guardar acceso</button>
+  <div id="token-msg"></div>
+</div>
+
+<div class="form-panel" id="form-panel">
+  <div class="form-grid">
+    <div><label>Ticker</label><input id="f-ticker" placeholder="ej: MSFT"></div>
+    <div><label>Nombre completo</label><input id="f-name" placeholder="ej: Microsoft Corp"></div>
+    <div><label>Tipo</label>
+      <select id="f-tipo">
+        <option value="accion">Accion</option>
+        <option value="etf">ETF</option>
+        <option value="cripto">Cripto</option>
+        <option value="privada">Privada / pre-IPO</option>
+      </select>
+    </div>
+    <div><label>Sector</label><input id="f-sector" placeholder="ej: Robotica"></div>
+  </div>
+  <button class="btn btn-add" id="btn-save-ticker">Guardar</button>
+  <button class="btn" id="btn-cancel-ticker">Cancelar</button>
+  <div id="form-msg"></div>
+</div>
+
+<!--SECTIONS-->
+
+<footer>
+  Precios y rangos calculados sobre datos historicos reales (financialmodelingprep.com, cruzado con stooq.com).
+  Noticias tomadas de RSS reales de Yahoo Finance, nunca resumidas ni inventadas.
+  El flujo institucional (13F) es trimestral por naturaleza -- su fecha de actualizacion se mantiene fija entre filings, eso es correcto, no un error.
+  Esto no es asesoramiento financiero.
+</footer>
+
+</div>
+
+<script>
+function ghConfig(){
+  return {
+    token: localStorage.getItem('gh_token') || '',
+    owner: localStorage.getItem('gh_owner') || '',
+    repo: localStorage.getItem('gh_repo') || ''
+  };
+}
+
+document.getElementById('btn-token').addEventListener('click', ()=>{
+  document.getElementById('token-panel').classList.toggle('open');
+});
+document.getElementById('btn-save-token').addEventListener('click', ()=>{
+  localStorage.setItem('gh_token', document.getElementById('gh-token').value.trim());
+  localStorage.setItem('gh_owner', document.getElementById('gh-owner').value.trim());
+  localStorage.setItem('gh_repo', document.getElementById('gh-repo').value.trim());
+  document.getElementById('token-msg').innerHTML = '<div class="msg ok">Guardado en este navegador.</div>';
+});
+
+document.getElementById('btn-toggle-form').addEventListener('click', ()=>{
+  document.getElementById('form-panel').classList.toggle('open');
+});
+document.getElementById('btn-cancel-ticker').addEventListener('click', ()=>{
+  document.getElementById('form-panel').classList.remove('open');
+});
+
+async function ghGetFile(){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/watchlist.json`;
+  const res = await fetch(url, {headers:{Authorization:`token ${c.token}`}});
+  if(!res.ok) throw new Error('No se pudo leer watchlist.json (revisa el token/owner/repo)');
+  const data = await res.json();
+  const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+  return {content, sha: data.sha};
+}
+
+async function ghPutFile(newContentObj, sha, message){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/watchlist.json`;
+  const body = {
+    message: message,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(newContentObj, null, 2)))),
+    sha: sha
+  };
+  const res = await fetch(url, {
+    method:'PUT',
+    headers:{Authorization:`token ${c.token}`, 'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){ const t = await res.text(); throw new Error('Error guardando: '+t); }
+}
+
+async function triggerWorkflow(){
+  const c = ghConfig();
+  try{
+    await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/actions/workflows/update-watchlist.yml/dispatches`,{
+      method:'POST',
+      headers:{Authorization:`token ${c.token}`, 'Content-Type':'application/json'},
+      body: JSON.stringify({ref:'main'})
+    });
+  }catch(e){}
+}
+
+document.getElementById('btn-save-ticker').addEventListener('click', async ()=>{
+  const msgEl = document.getElementById('form-msg');
+  const ticker = document.getElementById('f-ticker').value.trim().toUpperCase();
+  const name = document.getElementById('f-name').value.trim() || ticker;
+  const tipo = document.getElementById('f-tipo').value;
+  const sector = document.getElementById('f-sector').value.trim() || 'Sin clasificar';
+  if(!ticker){ msgEl.innerHTML = '<div class="msg err">Pone al menos un ticker.</div>'; return; }
+  try{
+    msgEl.innerHTML = '<div class="msg">Guardando...</div>';
+    const {content, sha} = await ghGetFile();
+    content.push({ticker, name, tipo, sector, signal:'nd'});
+    await ghPutFile(content, sha, `Agregar ${ticker} via app`);
+    await triggerWorkflow();
+    msgEl.innerHTML = '<div class="msg ok">Guardado. La actualizacion va a tardar 1-2 minutos.</div>';
+  }catch(e){
+    msgEl.innerHTML = `<div class="msg err">${e.message}</div>`;
+  }
+});
+
+async function removeTicker(ticker){
+  if(!confirm(`Sacar ${ticker} de la watchlist?`)) return;
+  try{
+    const {content, sha} = await ghGetFile();
+    const filtered = content.filter(it => it.ticker !== ticker);
+    await ghPutFile(filtered, sha, `Sacar ${ticker} via app`);
+    await triggerWorkflow();
+    alert('Sacado. La actualizacion va a tardar 1-2 minutos.');
+  }catch(e){
+    alert('Error: '+e.message);
+  }
+}
+
+document.getElementById('btn-refresh-now').addEventListener('click', async ()=>{
+  await triggerWorkflow();
+  alert('Corrida manual disparada. Refresca esta pagina en 1-2 minutos.');
+});
+</script>
+</body>
+</html>

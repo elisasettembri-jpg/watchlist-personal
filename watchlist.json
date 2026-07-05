@@ -1,0 +1,23 @@
+[
+  {"ticker":"TSLA","name":"Tesla","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"NVDA","name":"Nvidia","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"ISRG","name":"Intuitive Surgical","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"SYM","name":"Symbotic","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"ROK","name":"Rockwell Automation","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"BOTZ","name":"Global X Robotics and AI ETF","tipo":"etf","sector":"Robotica","signal":"nd"},
+  {"ticker":"QQQ","name":"Invesco Nasdaq-100 ETF","tipo":"etf","sector":"Diversificado","signal":"nd"},
+  {"ticker":"IONQ","name":"IonQ","tipo":"accion","sector":"Computo cuantico","signal":"nd"},
+  {"ticker":"RGTI","name":"Rigetti Computing","tipo":"accion","sector":"Computo cuantico","signal":"nd"},
+  {"ticker":"QBTS","name":"D-Wave Quantum","tipo":"accion","sector":"Computo cuantico","signal":"nd"},
+  {"ticker":"QUBT","name":"Quantum Computing Inc","tipo":"accion","sector":"Computo cuantico","signal":"nd"},
+  {"ticker":"IBM","name":"IBM","tipo":"accion","sector":"Computo cuantico","signal":"nd"},
+  {"ticker":"RXRX","name":"Recursion Pharmaceuticals","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"SDGR","name":"Schrodinger","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"ABSI","name":"Absci","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"EIKN","name":"Eikon Therapeutics","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"BFLY","name":"Butterfly Network","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"BTC","name":"Bitcoin","tipo":"cripto","sector":"Cripto","signal":"nd"},
+  {"ticker":"FIGURE","name":"Figure AI","tipo":"privada","sector":"Robotica","signal":"nd"},
+  {"ticker":"NEURALINK","name":"Neuralink","tipo":"privada","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"ISOMORPHIC","name":"Isomorphic Labs","tipo":"privada","sector":"Salud e IA","signal":"nd"}
+]
