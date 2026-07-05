@@ -168,13 +168,23 @@ async function ghPutFile(newContentObj, sha, message){
 
 async function triggerWorkflow(){
   const c = ghConfig();
+  if(!c.token || !c.owner || !c.repo){
+    return {ok:false, reason:'Falta configurar el acceso (token/usuario/repo) en este navegador.'};
+  }
   try{
-    await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/actions/workflows/update-watchlist.yml/dispatches`,{
+    const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/actions/workflows/update-watchlist.yml/dispatches`,{
       method:'POST',
       headers:{Authorization:`token ${c.token}`, 'Content-Type':'application/json'},
       body: JSON.stringify({ref:'main'})
     });
-  }catch(e){}
+    if(res.status === 204){
+      return {ok:true};
+    }
+    const t = await res.text();
+    return {ok:false, reason:`GitHub respondio ${res.status}: ${t.slice(0,150)}`};
+  }catch(e){
+    return {ok:false, reason:e.message};
+  }
 }
 
 document.getElementById('btn-save-ticker').addEventListener('click', async ()=>{
@@ -210,8 +220,12 @@ async function removeTicker(ticker){
 }
 
 document.getElementById('btn-refresh-now').addEventListener('click', async ()=>{
-  await triggerWorkflow();
-  alert('Corrida manual disparada. Refresca esta pagina en 1-2 minutos.');
+  const r = await triggerWorkflow();
+  if(r.ok){
+    alert('Corrida manual disparada correctamente. Fijate en la pestaña Actions de GitHub, o refresca esta pagina en 1-2 minutos.');
+  }else{
+    alert('No se pudo disparar la corrida: '+r.reason);
+  }
 });
 </script>
 </body>
