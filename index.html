@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi watchlist</title>
+<style>
+  :root{
+    --bg:#0D1117; --panel:#151B24; --card:#1B222D; --line:#262F3B;
+    --text:#E6EAF0; --muted:#8A94A6; --mono:'SFMono-Regular',Consolas,'Courier New',monospace;
+    --green:#3ECF8E; --green-bg:#0F2A22; --amber:#F5A623; --amber-bg:#2E2408; --red:#FF6B6B; --red-bg:#331414;
+    --blue:#5B8DEF; --blue-bg:#0E1E33;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; margin:0; padding:20px 14px 60px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:18px;}
+  h1{font-size:20px; font-weight:600; margin:0 0 4px;}
+  .sub{color:var(--muted); font-size:12.5px;}
+  .toolbar{display:flex; gap:8px; align-items:center; margin:16px 0 20px; flex-wrap:wrap;}
+  button{font-family:inherit; cursor:pointer;}
+  .btn{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font-size:12.5px;}
+  .btn-add{background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue); font-weight:600;}
+  select, input{background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:7px 9px; font-size:12.5px;}
+  .form-panel{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; display:none;}
+  .form-panel.open{display:block;}
+  .form-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:10px;}
+  .form-grid label{font-size:11px; color:var(--muted); display:block; margin-bottom:4px;}
+  .form-grid input, .form-grid select{width:100%;}
+  .msg{font-size:12px; padding:8px 10px; border-radius:6px; margin-top:8px;}
+  .msg.ok{background:var(--green-bg); color:var(--green);}
+  .msg.err{background:var(--red-bg); color:var(--red);}
+  section{margin-bottom:30px;}
+  .sec-title{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .sec-title h2{font-size:14px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin:0;}
+  .sec-title .count{font-size:11px; color:var(--muted);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:12px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; position:relative;}
+  .card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:8px 0 0 8px;}
+  .card.buy::before{background:var(--green);} .card.wait::before{background:var(--amber);}
+  .card.caution::before{background:var(--red);} .card.nd::before{background:var(--muted);}
+  .card-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;}
+  .ticker{font-family:var(--mono); font-size:16px; font-weight:700;}
+  .company{font-size:11px; color:var(--muted); margin-top:1px;}
+  .head-right{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .badge{font-size:10px; font-weight:700; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap;}
+  .badge.buy{background:var(--green-bg); color:var(--green);} .badge.wait{background:var(--amber-bg); color:var(--amber);}
+  .badge.caution{background:var(--red-bg); color:var(--red);} .badge.nd{background:var(--line); color:var(--muted);}
+  .btn-del{background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:6px; font-size:13px; width:24px; height:24px;}
+  .btn-del:hover{color:var(--red); border-color:var(--red);}
+  .field{padding:6px 0; border-top:1px solid var(--line); font-size:12px;}
+  .field .k{color:var(--muted); font-size:10px; text-transform:uppercase; margin-bottom:2px;}
+  .field .v{color:var(--text); line-height:1.5;} .field .v.nd{color:var(--muted); font-style:italic;}
+  .fdate{color:var(--muted); font-size:10px; margin-left:6px;}
+  .source{font-size:10px; color:var(--muted); padding:2px 0 4px;}
+  a{color:var(--blue);}
+  footer{border-top:1px solid var(--line); padding-top:14px; margin-top:10px; font-size:11.5px; color:var(--muted); line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Mi watchlist</h1>
+  <div class="sub">Ultima corrida automatica: 2026-07-05 19:55 UTC</div>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-add" id="btn-toggle-form">+ Agregar / sacar ticker</button>
+  <button class="btn" id="btn-refresh-now">Actualizar ahora</button>
+  <button class="btn" id="btn-token">Configurar acceso</button>
+</div>
+
+<div class="form-panel" id="token-panel">
+  <div class="form-grid">
+    <div style="grid-column:1/-1;">
+      <label>Token personal de GitHub (se guarda solo en este navegador)</label>
+      <input id="gh-token" type="password" placeholder="ghp_...">
+    </div>
+    <div><label>Usuario/organizacion</label><input id="gh-owner" placeholder="tuusuario"></div>
+    <div><label>Nombre del repo</label><input id="gh-repo" placeholder="watchlist-personal"></div>
+  </div>
+  <button class="btn btn-add" id="btn-save-token">Guardar acceso</button>
+  <div id="token-msg"></div>
+</div>
+
+<div class="form-panel" id="form-panel">
+  <div class="form-grid">
+    <div><label>Ticker</label><input id="f-ticker" placeholder="ej: MSFT"></div>
+    <div><label>Nombre completo</label><input id="f-name" placeholder="ej: Microsoft Corp"></div>
+    <div><label>Tipo</label>
+      <select id="f-tipo">
+        <option value="accion">Accion</option>
+        <option value="etf">ETF</option>
+        <option value="cripto">Cripto</option>
+        <option value="privada">Privada / pre-IPO</option>
+      </select>
+    </div>
+    <div><label>Sector</label><input id="f-sector" placeholder="ej: Robotica"></div>
+  </div>
+  <button class="btn btn-add" id="btn-save-ticker">Guardar</button>
+  <button class="btn" id="btn-cancel-ticker">Cancelar</button>
+  <div id="form-msg"></div>
+</div>
+
+<section><div class="sec-title"><h2>Computo cuantico</h2><div class="count">5 activo(s)</div></div><div class="grid"><div class="card nd" data-idx="7" data-ticker="IONQ">
+  <div class="card-head">
+    <div><div class="ticker">IONQ</div><div class="company">IonQ</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('IONQ')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/03/why-ionq-stock-plummeted-261-in-june/?.tsrc=rss" style="color:var(--blue);">Why IonQ Stock Plummeted 26.1% in June</a><span class="fdate"> Fri, 03 Jul 2026 20:18:22 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/coverage/better-buy/2026/07/03/ionq-vs-quantum-computing-inc-which-quantum-computing-stock-is-a-better-buy-in-2026/?.tsrc=rss" style="color:var(--blue);">IonQ vs. Quantum Computing Inc.: Which Quantum Computing Stock Is a Better Buy in 2026?</a><span class="fdate"> Fri, 03 Jul 2026 17:44:01 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="8" data-ticker="RGTI">
+  <div class="card-head">
+    <div><div class="ticker">RGTI</div><div class="company">Rigetti Computing</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('RGTI')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/rigetti-computing-inc-rgti-stock-215004274.html?.tsrc=rss" style="color:var(--blue);">Rigetti Computing, Inc. (RGTI) Stock Moves -3.85%: What You Should Know</a><span class="fdate"> Thu, 02 Jul 2026 21:50:04 +0000</span></div><div style="margin-bottom:4px;"><a href="https://247wallst.com/investing/2026/07/02/a-revolutionary-technology-narrative-has-surged-dont-take-the-bait/?.tsrc=rss" style="color:var(--blue);">A Revolutionary Technology Narrative Has Surged—Don’t Take the Bait</a><span class="fdate"> Thu, 02 Jul 2026 12:05:38 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="9" data-ticker="QBTS">
+  <div class="card-head">
+    <div><div class="ticker">QBTS</div><div class="company">D-Wave Quantum</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('QBTS')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/04/is-d-wave-quantum-a-buy/?.tsrc=rss" style="color:var(--blue);">Is D-Wave Quantum a Buy?</a><span class="fdate"> Sat, 04 Jul 2026 12:49:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/technology/ai/articles/d-wave-quantum-qbts-secures-131534566.html?.tsrc=rss" style="color:var(--blue);">D-Wave Quantum (QBTS) Secures NSF Grant For Yale Led Fault Tolerance Research</a><span class="fdate"> Thu, 02 Jul 2026 13:15:34 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="10" data-ticker="QUBT">
+  <div class="card-head">
+    <div><div class="ticker">QUBT</div><div class="company">Quantum Computing Inc</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('QUBT')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/technology/ai/articles/2-stocks-could-benefit-trumps-190000533.html?.tsrc=rss" style="color:var(--blue);">2 Stocks That Could Benefit From Trump's Quantum Executive Orders</a><span class="fdate"> Fri, 03 Jul 2026 19:00:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/coverage/better-buy/2026/07/03/ionq-vs-quantum-computing-inc-which-quantum-computing-stock-is-a-better-buy-in-2026/?.tsrc=rss" style="color:var(--blue);">IonQ vs. Quantum Computing Inc.: Which Quantum Computing Stock Is a Better Buy in 2026?</a><span class="fdate"> Fri, 03 Jul 2026 17:44:01 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="11" data-ticker="IBM">
+  <div class="card-head">
+    <div><div class="ticker">IBM</div><div class="company">IBM</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('IBM')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/technology/ai/articles/robert-w-baird-maintains-buy-141113205.html?.tsrc=rss" style="color:var(--blue);">Robert W. Baird Maintains Buy Rating on Palo Alto Networks (PANW) Stock</a><span class="fdate"> Sat, 04 Jul 2026 14:11:13 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/technology/ai/articles/2-stocks-could-benefit-trumps-190000533.html?.tsrc=rss" style="color:var(--blue);">2 Stocks That Could Benefit From Trump's Quantum Executive Orders</a><span class="fdate"> Fri, 03 Jul 2026 19:00:00 +0000</span></div></div></div>
+</div></div></section><section><div class="sec-title"><h2>Cripto</h2><div class="count">1 activo(s)</div></div><div class="grid"><div class="card nd" data-idx="17" data-ticker="BTC">
+  <div class="card-head">
+    <div><div class="ticker">BTC</div><div class="company">Bitcoin</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('BTC')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion<span class="fdate">2026-07-05 19:55 UTC</span></div><div class="v">$62,718.00</div></div>
+  <div class="source">Fuente: CoinGecko (gratis, sin key)</div>
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v nd">Sin noticias encontradas en esta corrida</div></div>
+</div></div></section><section><div class="sec-title"><h2>Diversificado</h2><div class="count">1 activo(s)</div></div><div class="grid"><div class="card nd" data-idx="6" data-ticker="QQQ">
+  <div class="card-head">
+    <div><div class="ticker">QQQ</div><div class="company">Invesco Nasdaq-100 ETF</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('QQQ')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/voo-vs-qqq-which-is-better-buy-long-term-investors/?.tsrc=rss" style="color:var(--blue);">VOO vs. QQQ: Which Is the Better Buy for Long-Term Investors?</a><span class="fdate"> Sun, 05 Jul 2026 15:20:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/should-you-buy-qqq-tech-stocks-all-time-highs/?.tsrc=rss" style="color:var(--blue);">Should You Buy QQQ While Tech Stocks Are Still Near Their All-Time Highs?</a><span class="fdate"> Sun, 05 Jul 2026 10:45:00 +0000</span></div></div></div>
+</div></div></section><section><div class="sec-title"><h2>Robotica</h2><div class="count">7 activo(s)</div></div><div class="grid"><div class="card nd" data-idx="0" data-ticker="TSLA">
+  <div class="card-head">
+    <div><div class="ticker">TSLA</div><div class="company">Tesla</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('TSLA')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:54 UTC</span></div><div class="v">Punto a favor: Tesla mantiene una valoración sustancial de $1.48 trillones, equiparable a Meta, indicando gran relevancia de mercado.
+Punto en contra: La noticia plantea incertidumbre sobre qué acción (Tesla o Meta) superará a la otra en el futuro.
+Conclusión: Dada la falta de precio actual, rango o puntajes técnicos, los datos son insuficientes para una opinión sólida de "atractivo", "esperar" o "cautela".</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/meta-and-tesla-are-suddenly-worth-the-same-148-tri/?.tsrc=rss" style="color:var(--blue);">Meta and Tesla Are Suddenly Worth the Same $1.48 Trillion. Which Stock Wins from Here?</a><span class="fdate"> Sun, 05 Jul 2026 19:27:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/prediction-this-artificial-intelligence-ai-stock-c/?.tsrc=rss" style="color:var(--blue);">Prediction: This Artificial Intelligence (AI) Stock Could Double Before 2026 Ends</a><span class="fdate"> Sun, 05 Jul 2026 17:20:00 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="1" data-ticker="NVDA">
+  <div class="card-head">
+    <div><div class="ticker">NVDA</div><div class="company">Nvidia</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('NVDA')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:54 UTC</span></div><div class="v">Los datos proporcionados son insuficientes para emitir una opinión informada sobre NVDA. No hay información sobre su precio actual, rango de 3 meses, puntaje técnico ni flujo institucional. Las noticias mencionadas no se refieren directamente a Nvidia.</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/meta-and-tesla-are-suddenly-worth-the-same-148-tri/?.tsrc=rss" style="color:var(--blue);">Meta and Tesla Are Suddenly Worth the Same $1.48 Trillion. Which Stock Wins from Here?</a><span class="fdate"> Sun, 05 Jul 2026 19:27:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/ethereum-lost-22-in-1-month-heres-why-it-could-sti/?.tsrc=rss" style="color:var(--blue);">Ethereum Lost 22% in 1 Month. Here's Why It Could Still Get Worse</a><span class="fdate"> Sun, 05 Jul 2026 19:22:00 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="2" data-ticker="ISRG">
+  <div class="card-head">
+    <div><div class="ticker">ISRG</div><div class="company">Intuitive Surgical</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('ISRG')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:54 UTC</span></div><div class="v">A favor: Intuitive Surgical (ISRG) reportó resultados sólidos y su producto Da Vinci 5 gana terreno.
+En contra: Faltan datos críticos como precio actual, rango de 3 meses, puntaje técnico y flujo institucional.
+Conclusión: Dada la insuficiencia de información clave para una valoración completa, se recomienda **cautela**.</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/piper-sandler-pipr-stock-looks-140957397.html?.tsrc=rss" style="color:var(--blue);">Piper Sandler (PIPR) Stock Looks Strong On Returns Yet Above Fair Value</a><span class="fdate"> Sat, 04 Jul 2026 14:09:57 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/intuitive-surgical-isrg-posts-strong-050657717.html?.tsrc=rss" style="color:var(--blue);">Intuitive Surgical (ISRG) Posts Strong Results As Da Vinci 5 Gains Ground</a><span class="fdate"> Sat, 04 Jul 2026 05:06:57 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="3" data-ticker="SYM">
+  <div class="card-head">
+    <div><div class="ticker">SYM</div><div class="company">Symbotic</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('SYM')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:54 UTC</span></div><div class="v">Punto a favor: Jim Cramer la considera una "especulación decente" y "demasiado baja", y se asocia a la tendencia de "Agentic Shopping" y la apuesta en IA de Walmart/Google.
+Punto en contra: Faltan datos críticos como el precio actual, rango de 3 meses, puntaje técnico y flujo institucional.
+Conclusión: Los datos disponibles son insuficientes para emitir una opinión informada. Se recomienda esperar.</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/jim-cramer-symbotic-think-decent-081722808.html?.tsrc=rss" style="color:var(--blue);">Jim Cramer on Symbotic: “I Think It’s a Decent Spec, and It’s Too Low”</a><span class="fdate"> Fri, 03 Jul 2026 17:58:22 +0000</span></div><div style="margin-bottom:4px;"><a href="https://247wallst.com/investing/2026/07/02/agentic-shopping-is-coming-these-stocks-will-ride-walmarts-google-ai-bet/?.tsrc=rss" style="color:var(--blue);">Agentic Shopping Is Coming. These Stocks Will Ride Walmart’s Google AI Bet.</a><span class="fdate"> Thu, 02 Jul 2026 16:55:57 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="4" data-ticker="ROK">
+  <div class="card-head">
+    <div><div class="ticker">ROK</div><div class="company">Rockwell Automation</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('ROK')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:55 UTC</span></div><div class="v">**Punto a favor:** Noticia reciente destaca a ROK como una de las mejores acciones en robótica, clave para la automatización en manufactura.
+
+**Punto en contra:** Ausencia total de datos fundamentales como precio actual, rango de 3 meses, puntaje técnico y flujo institucional.
+
+**Conclusión:** Datos insuficientes para emitir una opinión informada. Se requiere mucha más información para considerar una postura.</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/rockwell-automation-inc-rok-one-135159666.html?.tsrc=rss" style="color:var(--blue);">Rockwell Automation, Inc. (ROK): One of the Best Robotics Stocks to Buy, Helping Manufacturers Move from Fragmented Automation</a><span class="fdate"> Sat, 04 Jul 2026 13:51:59 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/rockwell-automation-inc-rok-good-234220655.html?.tsrc=rss" style="color:var(--blue);">Is Rockwell Automation, Inc. (ROK) A Good Stock To Buy Now?</a><span class="fdate"> Fri, 03 Jul 2026 23:42:20 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="5" data-ticker="BOTZ">
+  <div class="card-head">
+    <div><div class="ticker">BOTZ</div><div class="company">Global X Robotics and AI ETF</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('BOTZ')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)<span class="fdate">2026-07-05 19:55 UTC</span></div><div class="v">**A favor:** Las noticias recientes destacan un crecimiento masivo en IA ($10 trillones) y el desarrollo en IA humanoide, posicionando a BOTZ como una vía para participar en este sector dinámico.
+**En contra:** La ausencia de precio actual, rango a 3 meses, puntaje técnico y flujo institucional impide evaluar la situación específica del ETF.
+**Conclusión:** Esperar.</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.marketbeat.com/articles/agility-robotics-spac-deal-opens-a-rare-door-into-humanoid-ai/?utm_source=yahoofinance&utm_medium=yahoofinance&.tsrc=rss" style="color:var(--blue);">Agility Robotics’ SPAC Deal Opens a Rare Door Into Humanoid AI</a><span class="fdate"> Thu, 02 Jul 2026 13:55:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://247wallst.com/investing/etf/2026/06/29/ai-just-minted-10-trillion-and-you-own-none-of-it-these-4-etfs-put-you-in-the-game/?.tsrc=rss" style="color:var(--blue);">AI Just Minted $10 Trillion and You Own None of It. These 4 ETFs Put You in the Game</a><span class="fdate"> Mon, 29 Jun 2026 22:59:01 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="18" data-ticker="FIGURE">
+  <div class="card-head">
+    <div><div class="ticker">FIGURE</div><div class="company">Figure AI</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('FIGURE')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v">Privada -- sin ticker publico</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v">Sin fecha de IPO anunciada</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v">N/D -- no cotiza</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v nd">Sin noticias encontradas en esta corrida</div></div>
+</div></div></section><section><div class="sec-title"><h2>Salud e IA</h2><div class="count">7 activo(s)</div></div><div class="grid"><div class="card nd" data-idx="12" data-ticker="RXRX">
+  <div class="card-head">
+    <div><div class="ticker">RXRX</div><div class="company">Recursion Pharmaceuticals</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('RXRX')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/investing/2026/07/05/cathie-wood-goes-bargain-hunting-3-stocks-she-just/?.tsrc=rss" style="color:var(--blue);">Cathie Wood Goes Bargain Hunting: 3 Stocks She Just Bought</a><span class="fdate"> Sun, 05 Jul 2026 10:23:00 +0000</span></div><div style="margin-bottom:4px;"><a href="https://www.fool.com/coverage/better-buy/2026/07/04/dyne-therapeutics-vs-recursion-pharmaceuticals-which-development-stage-pharma-stock-is-a-better-buy-in-2026/?.tsrc=rss" style="color:var(--blue);">Dyne Therapeutics vs. Recursion Pharmaceuticals: Which Development Stage Pharma Stock Is a Better Buy in 2026?</a><span class="fdate"> Sat, 04 Jul 2026 13:41:09 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="13" data-ticker="SDGR">
+  <div class="card-head">
+    <div><div class="ticker">SDGR</div><div class="company">Schrodinger</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('SDGR')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://247wallst.com/investing/2026/07/01/amd-is-up-150-this-year-but-here-are-5-overlooked-stocks-betting-on-what-comes-next/?.tsrc=rss" style="color:var(--blue);">AMD Is Up 150% This Year But Here Are 5 Overlooked Stocks Betting on What Comes Next</a><span class="fdate"> Wed, 01 Jul 2026 16:16:53 +0000</span></div><div style="margin-bottom:4px;"><a href="https://247wallst.com/investing/2026/06/30/ai-is-transforming-drug-discovery-here-is-the-next-trillion-dollar-biotech-opportunity/?.tsrc=rss" style="color:var(--blue);">AI Is Transforming Drug Discovery. Here Is the Next Trillion-Dollar Biotech Opportunity</a><span class="fdate"> Tue, 30 Jun 2026 13:38:29 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="14" data-ticker="ABSI">
+  <div class="card-head">
+    <div><div class="ticker">ABSI</div><div class="company">Absci</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('ABSI')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/heres-why-absci-corporation-absi-160004837.html?.tsrc=rss" style="color:var(--blue);">Here's Why Absci Corporation (ABSI) is a Great Momentum Stock to Buy</a><span class="fdate"> Thu, 02 Jul 2026 16:00:04 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/healthcare/articles/absci-raises-100-million-equity-100125058.html?.tsrc=rss" style="color:var(--blue);">Absci Raises $100 Million In Equity To Fund AI-Designed Hair Loss And Endometriosis Program</a><span class="fdate"> Sat, 27 Jun 2026 10:01:25 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="15" data-ticker="EIKN">
+  <div class="card-head">
+    <div><div class="ticker">EIKN</div><div class="company">Eikon Therapeutics</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('EIKN')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/healthcare/articles/eikon-therapeutics-inc-eikn-stock-200639428.html?.tsrc=rss" style="color:var(--blue);">Is Eikon Therapeutics, Inc. (EIKN) Stock a Biotech Growth Opportunity Despite Limited Q1 Updates?</a><span class="fdate"> Thu, 02 Jul 2026 20:06:39 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/eikon-therapeutics-join-russell-3000-201500824.html?.tsrc=rss" style="color:var(--blue);">Eikon Therapeutics to Join the Russell 3000® Index</a><span class="fdate"> Thu, 25 Jun 2026 20:15:00 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="16" data-ticker="BFLY">
+  <div class="card-head">
+    <div><div class="ticker">BFLY</div><div class="company">Butterfly Network</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('BFLY')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v"><div style="margin-bottom:4px;"><a href="https://www.fool.com/coverage/filings/2026/07/05/butterfly-network-insider-sheds-399k-shares-this-stock-may-be-ready-to-take-flight/?.tsrc=rss" style="color:var(--blue);">Butterfly Network Insider Sheds 399K Shares — This Stock May Be Ready to Take Flight</a><span class="fdate"> Sun, 05 Jul 2026 12:44:01 +0000</span></div><div style="margin-bottom:4px;"><a href="https://finance.yahoo.com/markets/stocks/articles/butterfly-network-bfly-stock-could-161406602.html?.tsrc=rss" style="color:var(--blue);">Butterfly Network (BFLY) Stock Could Be Fully Valued Despite Its 296% Run</a><span class="fdate"> Sat, 04 Jul 2026 16:14:06 +0000</span></div></div></div>
+</div><div class="card nd" data-idx="19" data-ticker="NEURALINK">
+  <div class="card-head">
+    <div><div class="ticker">NEURALINK</div><div class="company">Neuralink</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('NEURALINK')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v">Privada -- sin ticker publico</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v">Sin fecha de IPO anunciada</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v">N/D -- no cotiza</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v nd">Sin noticias encontradas en esta corrida</div></div>
+</div><div class="card nd" data-idx="20" data-ticker="ISOMORPHIC">
+  <div class="card-head">
+    <div><div class="ticker">ISOMORPHIC</div><div class="company">Isomorphic Labs</div></div>
+    <div class="head-right">
+      <span class="badge nd">Sin clasificar</span>
+      <button class="btn-del" onclick="removeTicker('ISOMORPHIC')" aria-label="Sacar de la lista">&times;</button>
+    </div>
+  </div>
+  <div class="field"><div class="k">Precio / valuacion</div><div class="v">Privada -- sin ticker publico</div></div>
+  
+  <div class="field"><div class="k">Rango 3M / IPO</div><div class="v">Sin fecha de IPO anunciada</div></div>
+  <div class="field"><div class="k">Zona de entrada</div><div class="v">N/D -- no cotiza</div></div>
+  <div class="field"><div class="k">Puntaje tecnico (mecanico, sin IA)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Lectura automatica (IA gratuita, Gemini)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Flujo institucional (13F, trimestral)</div><div class="v nd">N/D -- sin dato verificado</div></div>
+  <div class="field"><div class="k">Noticias</div><div class="v nd">Sin noticias encontradas en esta corrida</div></div>
+</div></div></section>
+
+<footer>
+  Precios y rangos calculados sobre datos historicos reales (financialmodelingprep.com, cruzado con stooq.com).
+  Noticias tomadas de RSS reales de Yahoo Finance, nunca resumidas ni inventadas.
+  El flujo institucional (13F) es trimestral por naturaleza -- su fecha de actualizacion se mantiene fija entre filings, eso es correcto, no un error.
+  Esto no es asesoramiento financiero.
+</footer>
+
+</div>
+
+<script>
+function ghConfig(){
+  return {
+    token: localStorage.getItem('gh_token') || '',
+    owner: localStorage.getItem('gh_owner') || '',
+    repo: localStorage.getItem('gh_repo') || ''
+  };
+}
+
+document.getElementById('btn-token').addEventListener('click', ()=>{
+  document.getElementById('token-panel').classList.toggle('open');
+});
+document.getElementById('btn-save-token').addEventListener('click', ()=>{
+  localStorage.setItem('gh_token', document.getElementById('gh-token').value.trim());
+  localStorage.setItem('gh_owner', document.getElementById('gh-owner').value.trim());
+  localStorage.setItem('gh_repo', document.getElementById('gh-repo').value.trim());
+  document.getElementById('token-msg').innerHTML = '<div class="msg ok">Guardado en este navegador.</div>';
+});
+
+document.getElementById('btn-toggle-form').addEventListener('click', ()=>{
+  document.getElementById('form-panel').classList.toggle('open');
+});
+document.getElementById('btn-cancel-ticker').addEventListener('click', ()=>{
+  document.getElementById('form-panel').classList.remove('open');
+});
+
+async function ghGetFile(){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/watchlist.json`;
+  const res = await fetch(url, {headers:{Authorization:`token ${c.token}`}});
+  if(!res.ok) throw new Error('No se pudo leer watchlist.json (revisa el token/owner/repo)');
+  const data = await res.json();
+  const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+  return {content, sha: data.sha};
+}
+
+async function ghPutFile(newContentObj, sha, message){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/watchlist.json`;
+  const body = {
+    message: message,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(newContentObj, null, 2)))),
+    sha: sha
+  };
+  const res = await fetch(url, {
+    method:'PUT',
+    headers:{Authorization:`token ${c.token}`, 'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){ const t = await res.text(); throw new Error('Error guardando: '+t); }
+}
+
+async function triggerWorkflow(){
+  const c = ghConfig();
+  try{
+    await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/actions/workflows/update-watchlist.yml/dispatches`,{
+      method:'POST',
+      headers:{Authorization:`token ${c.token}`, 'Content-Type':'application/json'},
+      body: JSON.stringify({ref:'main'})
+    });
+  }catch(e){}
+}
+
+document.getElementById('btn-save-ticker').addEventListener('click', async ()=>{
+  const msgEl = document.getElementById('form-msg');
+  const ticker = document.getElementById('f-ticker').value.trim().toUpperCase();
+  const name = document.getElementById('f-name').value.trim() || ticker;
+  const tipo = document.getElementById('f-tipo').value;
+  const sector = document.getElementById('f-sector').value.trim() || 'Sin clasificar';
+  if(!ticker){ msgEl.innerHTML = '<div class="msg err">Pone al menos un ticker.</div>'; return; }
+  try{
+    msgEl.innerHTML = '<div class="msg">Guardando...</div>';
+    const {content, sha} = await ghGetFile();
+    content.push({ticker, name, tipo, sector, signal:'nd'});
+    await ghPutFile(content, sha, `Agregar ${ticker} via app`);
+    await triggerWorkflow();
+    msgEl.innerHTML = '<div class="msg ok">Guardado. La actualizacion va a tardar 1-2 minutos.</div>';
+  }catch(e){
+    msgEl.innerHTML = `<div class="msg err">${e.message}</div>`;
+  }
+});
+
+async function removeTicker(ticker){
+  if(!confirm(`Sacar ${ticker} de la watchlist?`)) return;
+  try{
+    const {content, sha} = await ghGetFile();
+    const filtered = content.filter(it => it.ticker !== ticker);
+    await ghPutFile(filtered, sha, `Sacar ${ticker} via app`);
+    await triggerWorkflow();
+    alert('Sacado. La actualizacion va a tardar 1-2 minutos.');
+  }catch(e){
+    alert('Error: '+e.message);
+  }
+}
+
+document.getElementById('btn-refresh-now').addEventListener('click', async ()=>{
+  await triggerWorkflow();
+  alert('Corrida manual disparada. Refresca esta pagina en 1-2 minutos.');
+});
+</script>
+</body>
+</html>
