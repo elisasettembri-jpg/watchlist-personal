@@ -1,0 +1,39 @@
+name: Actualizar watchlist
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+    - cron: '0 13 * * *'
+  push:
+    paths:
+      - 'watchlist.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bajar el repo (Git)
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Correr el script (Python)
+        env:
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/fetch_and_build.py
+
+      - name: Guardar el resultado (Git commit y push)
+        run: |
+          git config user.name "watchlist-bot"
+          git config user.email "watchlist-bot@users.noreply.github.com"
+          git add index.html
+          git diff --quiet --cached || git commit -m "Actualizacion automatica $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
