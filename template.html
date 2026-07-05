@@ -131,6 +131,10 @@ document.getElementById('btn-save-token').addEventListener('click', ()=>{
   localStorage.setItem('gh_owner', document.getElementById('gh-owner').value.trim());
   localStorage.setItem('gh_repo', document.getElementById('gh-repo').value.trim());
   document.getElementById('token-msg').innerHTML = '<div class="msg ok">Guardado en este navegador.</div>';
+  setTimeout(()=>{
+    document.getElementById('token-msg').innerHTML = '';
+    document.getElementById('token-panel').classList.remove('open');
+  }, 2000);
 });
 
 document.getElementById('btn-toggle-form').addEventListener('click', ()=>{
@@ -201,6 +205,13 @@ document.getElementById('btn-save-ticker').addEventListener('click', async ()=>{
     await ghPutFile(content, sha, `Agregar ${ticker} via app`);
     await triggerWorkflow();
     msgEl.innerHTML = '<div class="msg ok">Guardado. La actualizacion va a tardar 1-2 minutos.</div>';
+    setTimeout(()=>{
+      document.getElementById('f-ticker').value = '';
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-sector').value = '';
+      msgEl.innerHTML = '';
+      document.getElementById('form-panel').classList.remove('open');
+    }, 2500);
   }catch(e){
     msgEl.innerHTML = `<div class="msg err">${e.message}</div>`;
   }
