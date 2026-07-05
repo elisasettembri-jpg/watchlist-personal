@@ -25,6 +25,7 @@ import os
 import json
 import csv
 import io
+import time
 import urllib.request
 import urllib.error
 import xml.etree.ElementTree as ET
@@ -48,7 +49,7 @@ def http_get(url, timeout=15):
 
 
 def fmp_quote(ticker):
-    url = f"https://financialmodelingprep.com/api/v3/quote/{ticker}?apikey={FMP_KEY}"
+    url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_KEY}"
     data = json.loads(http_get(url))
     if not data:
         return None
@@ -56,11 +57,15 @@ def fmp_quote(ticker):
 
 
 def fmp_historical(ticker, days=210):
-    url = (f"https://financialmodelingprep.com/api/v3/historical-price-full/"
-           f"{ticker}?apikey={FMP_KEY}&timeseries={days}")
+    url = (f"https://financialmodelingprep.com/stable/historical-price-eod/full"
+           f"?symbol={ticker}&apikey={FMP_KEY}")
     data = json.loads(http_get(url))
-    hist = data.get("historical", [])
-    return hist
+    if isinstance(data, dict):
+        hist = data.get("historical", [])
+    else:
+        hist = data if isinstance(data, list) else []
+    hist = sorted(hist, key=lambda h: h.get("date", ""), reverse=True)
+    return hist[:days]
 
 
 def stooq_price(ticker):
@@ -206,6 +211,7 @@ def build_entry(item):
     score_str, checks = technical_score(price_fmp or price_stooq, ma50, ma200, lo90, hi90)
     entry["technical"] = {"val": score_str or "N/D", "checks": checks}
 
+    time.sleep(5)
     claude_text = ai_recommendation(entry, checks, score_str)
     entry["claude_read"] = {"val": claude_text or "N/D", "date": now if claude_text else ""}
 
