@@ -211,7 +211,7 @@ def build_entry(item):
     score_str, checks = technical_score(price_fmp or price_stooq, ma50, ma200, lo90, hi90)
     entry["technical"] = {"val": score_str or "N/D", "checks": checks}
 
-    time.sleep(5)
+    time.sleep(8)
     claude_text = ai_recommendation(entry, checks, score_str)
     entry["claude_read"] = {"val": claude_text or "N/D", "date": now if claude_text else ""}
 
@@ -291,18 +291,27 @@ son insuficientes para opinar, decilo explicitamente en vez de forzar una conclu
         headers={"Content-Type": "application/json"},
         method="POST"
     )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.loads(r.read())
-        candidates = data.get("candidates", [])
-        if not candidates:
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                data = json.loads(r.read())
+            candidates = data.get("candidates", [])
+            if not candidates:
+                return None
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text = " ".join([p.get("text", "") for p in parts]).strip()
+            return text or None
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < 2:
+                wait = 20 * (attempt + 1)
+                print(f"  [{entry['ticker']}] Gemini 429, esperando {wait}s antes de reintentar...")
+                time.sleep(wait)
+                continue
+            print(f"  [{entry['ticker']}] error llamando a Gemini: {e}")
             return None
-        parts = candidates[0].get("content", {}).get("parts", [])
-        text = " ".join([p.get("text", "") for p in parts]).strip()
-        return text or None
-    except Exception as e:
-        print(f"  [{entry['ticker']}] error llamando a Gemini: {e}")
-        return None
+        except Exception as e:
+            print(f"  [{entry['ticker']}] error llamando a Gemini: {e}")
+            return None
 
 
 def signal_label(s):
