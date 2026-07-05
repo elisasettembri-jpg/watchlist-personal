@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: watchlist-update
+  cancel-in-progress: false
+
 jobs:
   actualizar:
     runs-on: ubuntu-latest
@@ -36,4 +40,5 @@ jobs:
           git config user.email "watchlist-bot@users.noreply.github.com"
           git add index.html
           git diff --quiet --cached || git commit -m "Actualizacion automatica $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
           git push
