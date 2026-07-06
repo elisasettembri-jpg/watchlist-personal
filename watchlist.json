@@ -1,149 +1,99 @@
 [
-  {
-    "ticker": "TSLA",
-    "name": "Tesla",
-    "tipo": "accion",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "NVDA",
-    "name": "Nvidia",
-    "tipo": "accion",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "ISRG",
-    "name": "Intuitive Surgical",
-    "tipo": "accion",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "SYM",
-    "name": "Symbotic",
-    "tipo": "accion",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "ROK",
-    "name": "Rockwell Automation",
-    "tipo": "accion",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "BOTZ",
-    "name": "Global X Robotics and AI ETF",
-    "tipo": "etf",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "QQQ",
-    "name": "Invesco Nasdaq-100 ETF",
-    "tipo": "etf",
-    "sector": "Diversificado",
-    "signal": "nd"
-  },
-  {
-    "ticker": "IONQ",
-    "name": "IonQ",
-    "tipo": "accion",
-    "sector": "Computo cuantico",
-    "signal": "nd"
-  },
-  {
-    "ticker": "RGTI",
-    "name": "Rigetti Computing",
-    "tipo": "accion",
-    "sector": "Computo cuantico",
-    "signal": "nd"
-  },
-  {
-    "ticker": "QBTS",
-    "name": "D-Wave Quantum",
-    "tipo": "accion",
-    "sector": "Computo cuantico",
-    "signal": "nd"
-  },
-  {
-    "ticker": "QUBT",
-    "name": "Quantum Computing Inc",
-    "tipo": "accion",
-    "sector": "Computo cuantico",
-    "signal": "nd"
-  },
-  {
-    "ticker": "IBM",
-    "name": "IBM",
-    "tipo": "accion",
-    "sector": "Computo cuantico",
-    "signal": "nd"
-  },
-  {
-    "ticker": "RXRX",
-    "name": "Recursion Pharmaceuticals",
-    "tipo": "accion",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "SDGR",
-    "name": "Schrodinger",
-    "tipo": "accion",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "ABSI",
-    "name": "Absci",
-    "tipo": "accion",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "EIKN",
-    "name": "Eikon Therapeutics",
-    "tipo": "accion",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "BFLY",
-    "name": "Butterfly Network",
-    "tipo": "accion",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "BTC",
-    "name": "Bitcoin",
-    "tipo": "cripto",
-    "sector": "Cripto",
-    "signal": "nd"
-  },
-  {
-    "ticker": "FIGURE",
-    "name": "Figure AI",
-    "tipo": "privada",
-    "sector": "Robotica",
-    "signal": "nd"
-  },
-  {
-    "ticker": "NEURALINK",
-    "name": "Neuralink",
-    "tipo": "privada",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  },
-  {
-    "ticker": "ISOMORPHIC",
-    "name": "Isomorphic Labs",
-    "tipo": "privada",
-    "sector": "Salud e IA",
-    "signal": "nd"
-  }
+  {"ticker":"TSLA","name":"Tesla","tipo":"accion","sector":"Robotica","signal":"wait",
+   "flujo_manual":"Elon Musk ~15,3% (mayor accionista individual). ARK Invest la mantiene como posicion primaria de ARKQ","flujo_manual_fecha":"2026-05"},
+  {"ticker":"NVDA","name":"Nvidia","tipo":"accion","sector":"Robotica","signal":"buy",
+   "flujo_manual":"Sequoia/Sutter Hill desde 1993 (privado). Druckenmiller compro Q4 2022 y ya vendio. PEG 0,44","flujo_manual_fecha":"2026-07-02"},
+  {"ticker":"ISRG","name":"Intuitive Surgical","tipo":"accion","sector":"Robotica","signal":"wait",
+   "flujo_manual":"Vanguard, BlackRock, State Street, T. Rowe Price, Fidelity -- mayormente pasivo. Removida del Russell Top 50","flujo_manual_fecha":"2026-06"},
+  {"ticker":"SYM","name":"Symbotic","tipo":"accion","sector":"Robotica","signal":"nd",
+   "flujo_manual":"SoftBank ~31% (vendio 5,6M acciones), Walmart accionista estrategico desde IPO, fundador Rick Cohen","flujo_manual_fecha":"2026-05"},
+  {"ticker":"ROK","name":"Rockwell Automation","tipo":"accion","sector":"Robotica","signal":"nd",
+   "flujo_manual":"Institucional ~75-86% generico. Ontario Teachers Pension recorto; SEB/NEOS/HighTower aumentaron","flujo_manual_fecha":"2026"},
+  {"ticker":"9880.HK","name":"UBTECH Robotics","tipo":"accion","sector":"Robotica","signal":"nd",
+   "flujo_manual":"12 analistas Strong Buy. Insider Jian Zhou comprando en mercado abierto","flujo_manual_fecha":"2026-04"},
+  {"ticker":"QCOM","name":"Qualcomm","tipo":"accion","sector":"Robotica","signal":"nd"},
+  {"ticker":"BOTZ","name":"Global X Robotics and AI ETF","tipo":"etf","sector":"Robotica","signal":"nd",
+   "flujo_manual":"Bank of America, Morgan Stanley, LPL, Wells Fargo, UBS, JPMorgan -- plataformas wealth mgmt, no conviccion propia"},
+  {"ticker":"QQQ","name":"Invesco Nasdaq-100 ETF","tipo":"etf","sector":"Diversificado","signal":"nd"},
+
+  {"ticker":"IONQ","name":"IonQ","tipo":"accion","sector":"Computo cuantico","signal":"caution",
+   "flujo_manual":"Vanguard, BlackRock, Defiance ETFs, Susquehanna, UBS (pasivo). No recibio inversion estatal de mayo 2026","flujo_manual_fecha":"2026-06"},
+  {"ticker":"RGTI","name":"Rigetti Computing","tipo":"accion","sector":"Computo cuantico","signal":"caution",
+   "flujo_manual":"BlackRock (pasivo). Gobierno EE.UU. ~$100M. ARK Invest SALIO de la posicion -- descartada del portfolio","flujo_manual_fecha":"2026-05"},
+  {"ticker":"QBTS","name":"D-Wave Quantum","tipo":"accion","sector":"Computo cuantico","signal":"nd",
+   "flujo_manual":"BlackRock (pasivo). Gobierno EE.UU. ~$100M","flujo_manual_fecha":"2026-05"},
+  {"ticker":"QUBT","name":"Quantum Computing Inc","tipo":"accion","sector":"Computo cuantico","signal":"caution",
+   "flujo_manual":"Citadel Advisors, Marex Group, Vanguard, BlackRock. Sin inversion estatal -- descartada del portfolio","flujo_manual_fecha":"2026"},
+  {"ticker":"IQMX","name":"IQM Quantum Computers","tipo":"accion","sector":"Computo cuantico","signal":"caution",
+   "flujo_manual":"Recien debuto via SPAC (RAAQ), sin 13F todavia. Prospecto advierte que la adopcion comercial podria no ocurrir nunca","flujo_manual_fecha":"2026-07-02"},
+  {"ticker":"IBM","name":"IBM","tipo":"accion","sector":"Computo cuantico","signal":"nd",
+   "flujo_manual":"Recibio el cheque mas grande de la inversion estatal de mayo 2026 (~$1.000M)","flujo_manual_fecha":"2026-05"},
+
+  {"ticker":"RXRX","name":"Recursion Pharmaceuticals","tipo":"accion","sector":"Salud e IA","signal":"buy",
+   "flujo_manual":"ARK Invest suma activamente (+260k acc.). CEO y director vendieron acciones. Baillie Gifford, SoftBank, Mubadala","flujo_manual_fecha":"2026-06-24"},
+  {"ticker":"SDGR","name":"Schrodinger","tipo":"accion","sector":"Salud e IA","signal":"nd",
+   "flujo_manual":"Respaldada por Bill & Melinda Gates Foundation Trust. 31 fondos de cobertura la tienen"},
+  {"ticker":"ABSI","name":"Absci","tipo":"accion","sector":"Salud e IA","signal":"nd",
+   "flujo_manual":"Eli Lilly invirtio directamente en colocacion reciente. BVF Partners, Columbia Threadneedle, Invus, Redmile, Adage"},
+  {"ticker":"EIKN","name":"Eikon Therapeutics","tipo":"accion","sector":"Salud e IA","signal":"nd",
+   "flujo_manual":"Sin tenedores institucionales verificados todavia -- IPO muy reciente"},
+  {"ticker":"BFLY","name":"Butterfly Network","tipo":"accion","sector":"Salud e IA","signal":"buy",
+   "flujo_manual":"Fundador Jonathan Rothberg ~17%. ARK Invest, Glenview Capital. CFO Heather Getz vendio acciones","flujo_manual_fecha":"2026-06"},
+  {"ticker":"MDT","name":"Medtronic","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"TMO","name":"Thermo Fisher Scientific","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+  {"ticker":"AVGO","name":"Broadcom","tipo":"accion","sector":"Salud e IA","signal":"nd"},
+
+  {"ticker":"CEG","name":"Constellation Energy","tipo":"accion","sector":"Energia","signal":"buy",
+   "flujo_manual":"Consenso analistas Moderate Buy, objetivo ~$375-380"},
+  {"ticker":"NEE","name":"NextEra Energy","tipo":"accion","sector":"Energia","signal":"nd"},
+  {"ticker":"GEV","name":"GE Vernova","tipo":"accion","sector":"Energia","signal":"nd"},
+  {"ticker":"SMR","name":"NuScale Power","tipo":"accion","sector":"Energia","signal":"caution",
+   "flujo_manual":"Consenso analistas Hold, valor razonable por debajo del precio de mercado -- descartada del portfolio"},
+
+  {"ticker":"PANW","name":"Palo Alto Networks","tipo":"accion","sector":"Ciberseguridad","signal":"buy"},
+  {"ticker":"CRWD","name":"CrowdStrike","tipo":"accion","sector":"Ciberseguridad","signal":"nd",
+   "flujo_manual":"Ya en el portfolio real de Trading 212. Tambien en ARKQ"},
+  {"ticker":"ZS","name":"Zscaler","tipo":"accion","sector":"Ciberseguridad","signal":"nd"},
+
+  {"ticker":"KLAC","name":"KLA Corporation","tipo":"accion","sector":"Semiconductores equipamiento","signal":"nd",
+   "flujo_manual":"Insider selling ~$9,7M reciente (senal de cautela)","flujo_manual_fecha":"2026-06"},
+
+  {"ticker":"MP","name":"MP Materials","tipo":"accion","sector":"Tierras raras","signal":"buy",
+   "flujo_manual":"Departamento de Defensa 15% de la empresa. Goldman Sachs Buy $77, JPMorgan Overweight","flujo_manual_fecha":"2025-07"},
+  {"ticker":"LYC","name":"Lynas Rare Earths","tipo":"accion","sector":"Tierras raras","signal":"nd",
+   "flujo_manual":"Respaldo gubernamental de EE.UU., Australia y Malasia"},
+  {"ticker":"UUUU","name":"Energy Fuels","tipo":"accion","sector":"Tierras raras","signal":"nd"},
+  {"ticker":"REMX","name":"VanEck Rare Earth ETF","tipo":"etf","sector":"Tierras raras","signal":"nd",
+   "flujo_manual":"Principales posiciones: Lynas y MP"},
+
+  {"ticker":"SGLD","name":"Oro fisico (ETC)","tipo":"etf","sector":"Diversificador","signal":"buy",
+   "flujo_manual":"Correlacion de 0,04 con el S&P 500 en 30 anios -- casi cero"},
+  {"ticker":"PHAU","name":"iShares Physical Gold ETC","tipo":"etf","sector":"Diversificador","signal":"buy"},
+  {"ticker":"IGLT","name":"Bonos gobierno UK","tipo":"etf","sector":"Diversificador","signal":"nd",
+   "flujo_manual":"Unico diversificador con correlacion negativa real durante el shock arancelario de abril 2025"},
+  {"ticker":"IEF","name":"Bonos Tesoro EE.UU.","tipo":"etf","sector":"Diversificador","signal":"nd"},
+
+  {"ticker":"BTC","name":"Bitcoin","tipo":"cripto","sector":"Cripto","signal":"nd",
+   "flujo_manual":"No funciona como diversificador real -- correlaciona con activos de riesgo, no es refugio"},
+
+  {"ticker":"FIGURE","name":"Figure AI","tipo":"privada","sector":"Robotica","signal":"nd",
+   "estado_privada":"Privada -- sin ticker publico","ipo_rumor":"Sin fecha anunciada"},
+  {"ticker":"1X","name":"1X Technologies","tipo":"privada","sector":"Robotica","signal":"nd",
+   "estado_privada":"Privada -- sin ticker publico","ipo_rumor":"Sin fecha anunciada"},
+  {"ticker":"PHYSICAL_INT","name":"Physical Intelligence","tipo":"privada","sector":"Robotica","signal":"nd",
+   "estado_privada":"Privada -- sin ticker publico","ipo_rumor":"Sin fecha anunciada"},
+  {"ticker":"NEURALINK","name":"Neuralink","tipo":"privada","sector":"Salud e IA","signal":"nd",
+   "estado_privada":"Privada -- valuacion ~$9.000M ultima ronda","ipo_rumor":"Rumores de IPO, sin fecha confirmada"},
+  {"ticker":"MERGE_LABS","name":"Merge Labs","tipo":"privada","sector":"Salud e IA","signal":"nd",
+   "estado_privada":"Privada -- recaudo $252M liderado por OpenAI","ipo_rumor":"Sin fecha anunciada"},
+  {"ticker":"PRECISION_NEURO","name":"Precision Neuroscience","tipo":"privada","sector":"Salud e IA","signal":"nd",
+   "estado_privada":"Privada -- aprobacion FDA + acuerdo con Medtronic","ipo_rumor":"Candidata a IPO, sin fecha"},
+  {"ticker":"ISOMORPHIC","name":"Isomorphic Labs","tipo":"privada","sector":"Salud e IA","signal":"nd",
+   "estado_privada":"Privada -- recaudo $2.100M (Alphabet, fondos soberanos, Thrive)","ipo_rumor":"Sin fecha anunciada"},
+  {"ticker":"QUANTINUUM","name":"Quantinuum","tipo":"privada","sector":"Computo cuantico","signal":"nd",
+   "estado_privada":"Recien publica -- debuto en Nasdaq (spin-off Honeywell)","ipo_rumor":"Ticker exacto no confirmado -- 4 jun 2026"},
+  {"ticker":"INFLEQTION","name":"Infleqtion","tipo":"privada","sector":"Computo cuantico","signal":"nd",
+   "estado_privada":"Sin confirmar si ya cotiza","ipo_rumor":"Recibio ~$100M de inversion estatal -- may 2026"},
+  {"ticker":"INSILICO","name":"Insilico Medicine","tipo":"privada","sector":"Salud e IA","signal":"nd",
+   "estado_privada":"Ya cotiza en Hong Kong","ipo_rumor":"IPO en HKEX -- dic 2025. Ticker exacto no confirmado"}
 ]
