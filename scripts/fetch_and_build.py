@@ -31,7 +31,8 @@ import urllib.error
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
-FMP_KEY = os.environ.get("FMP_API_KEY", "")
+FMP_KEY = os.environ.get("FMP_API_KEY", "")  # ya no se usa, se mantiene por compatibilidad
+TD_KEY = os.environ.get("TWELVEDATA_API_KEY", "")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.5-flash"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,24 +49,23 @@ def http_get(url, timeout=15):
         return r.read()
 
 
-def fmp_quote(ticker):
-    url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_KEY}"
+def td_quote(ticker):
+    url = f"https://api.twelvedata.com/quote?symbol={ticker}&apikey={TD_KEY}"
     data = json.loads(http_get(url))
-    if not data:
+    if not data or data.get("status") == "error" or "code" in data:
         return None
-    return data[0]
+    return data
 
 
-def fmp_historical(ticker, days=210):
-    url = (f"https://financialmodelingprep.com/stable/historical-price-eod/full"
-           f"?symbol={ticker}&apikey={FMP_KEY}")
+def td_historical(ticker, days=210):
+    url = (f"https://api.twelvedata.com/time_series?symbol={ticker}"
+           f"&interval=1day&outputsize={days}&apikey={TD_KEY}")
     data = json.loads(http_get(url))
-    if isinstance(data, dict):
-        hist = data.get("historical", [])
-    else:
-        hist = data if isinstance(data, list) else []
-    hist = sorted(hist, key=lambda h: h.get("date", ""), reverse=True)
-    return hist[:days]
+    if not data or data.get("status") == "error":
+        return []
+    values = data.get("values", [])
+    values = sorted(values, key=lambda h: h.get("datetime", ""), reverse=True)
+    return values
 
 
 def stooq_price(ticker):
@@ -149,45 +149,35 @@ def build_entry(item):
         return entry
 
     # acciones y ETFs
-    price_fmp = None
-    price_stooq = None
+    price_td = None
+    fifty_two_week = None
     try:
-        q = fmp_quote(ticker)
+        q = td_quote(ticker)
         if q:
-            price_fmp = q.get("price")
+            price_td = float(q.get("close")) if q.get("close") else None
+            fw = q.get("fifty_two_week") or {}
+            if fw.get("low") and fw.get("high"):
+                fifty_two_week = (float(fw["low"]), float(fw["high"]))
     except Exception as e:
-        print(f"  [{ticker}] error FMP quote: {e}")
+        print(f"  [{ticker}] error Twelve Data quote: {e}")
 
-    try:
-        price_stooq = stooq_price(ticker)
-    except Exception as e:
-        print(f"  [{ticker}] error Stooq: {e}")
-
-    if price_fmp is not None:
-        note = "Fuente: financialmodelingprep.com"
-        if price_stooq is not None:
-            diff_pct = abs(price_fmp - price_stooq) / price_fmp * 100
-            if diff_pct <= 3:
-                note += " -- verificado contra stooq.com"
-            else:
-                note += f" -- OJO: stooq.com difiere {diff_pct:.1f}%, confirmar en broker"
-        entry["price"] = {"val": f"${price_fmp:,.2f}", "date": now}
-        entry["source_note"] = note
-    elif price_stooq is not None:
-        entry["price"] = {"val": f"${price_stooq:,.2f}", "date": now}
-        entry["source_note"] = "Fuente: stooq.com (FMP no disponible)"
+    if price_td is not None:
+        entry["price"] = {"val": f"${price_td:,.2f}", "date": now}
+        entry["source_note"] = "Fuente: twelvedata.com"
+        if fifty_two_week:
+            entry["range"] = {"val": f"52 sem: ${fifty_two_week[0]:,.2f} - ${fifty_two_week[1]:,.2f}", "date": now}
 
     ma50 = ma200 = lo90 = hi90 = None
     try:
-        hist = fmp_historical(ticker, 210)
+        hist = td_historical(ticker, 210)
         if hist:
-            closes = [h.get("close") for h in hist]
+            closes = [float(h["close"]) for h in hist if h.get("close")]
             last90 = closes[:90]
-            lo90 = min([c for c in last90 if c is not None], default=None)
-            hi90 = max([c for c in last90 if c is not None], default=None)
+            lo90 = min(last90) if last90 else None
+            hi90 = max(last90) if last90 else None
             ma50 = avg(closes[:50])
             ma200 = avg(closes[:200])
-            if lo90 is not None and hi90 is not None:
+            if lo90 is not None and hi90 is not None and not fifty_two_week:
                 entry["range"] = {"val": f"3 meses: ${lo90:,.2f} - ${hi90:,.2f}", "date": now}
             zone_bits = []
             if ma50 is not None:
@@ -197,11 +187,11 @@ def build_entry(item):
             if zone_bits:
                 entry["entry_zone"] = " -- ".join(zone_bits) + " (calculado sobre precios historicos reales)"
     except Exception as e:
-        print(f"  [{ticker}] error historico FMP: {e}")
+        print(f"  [{ticker}] error historico Twelve Data: {e}")
 
     entry["news"] = yahoo_news(ticker)
 
-    score_str, checks = technical_score(price_fmp or price_stooq, ma50, ma200, lo90, hi90)
+    score_str, checks = technical_score(price_td, ma50, ma200, lo90, hi90)
     entry["technical"] = {"val": score_str or "N/D", "checks": checks}
 
     time.sleep(8)
