@@ -29,7 +29,7 @@ jobs:
 
       - name: Correr el script (Python)
         env:
-          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/fetch_and_build.py
 
