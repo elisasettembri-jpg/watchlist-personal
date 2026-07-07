@@ -133,6 +133,7 @@ def build_entry(item):
         "source_note": "",
         "technical": {"val": "N/D", "checks": []},
         "claude_read": {"val": "N/D", "date": ""},
+        "franja_sintetizada": None,
     }
 
     if tipo == "privada":
@@ -167,9 +168,10 @@ def build_entry(item):
         if fifty_two_week:
             entry["range"] = {"val": f"52 sem: ${fifty_two_week[0]:,.2f} - ${fifty_two_week[1]:,.2f}", "date": now}
 
-    ma50 = ma200 = lo90 = hi90 = None
+    ma50 = ma200 = lo90 = hi90 = rsi = None
+    sr = None
     try:
-        hist = td_historical(ticker, 210)
+        hist = td_historical(ticker, 260)  # ~1 anio de dias habiles
         if hist:
             closes = [float(h["close"]) for h in hist if h.get("close")]
             last90 = closes[:90]
@@ -177,13 +179,27 @@ def build_entry(item):
             hi90 = max(last90) if last90 else None
             ma50 = avg(closes[:50])
             ma200 = avg(closes[:200])
+            rsi = calc_rsi(closes, 14)
+            sr = find_support_resistance(hist, price_td) if price_td is not None else None
+
             if lo90 is not None and hi90 is not None and not fifty_two_week:
                 entry["range"] = {"val": f"3 meses: ${lo90:,.2f} - ${hi90:,.2f}", "date": now}
+
             zone_bits = []
+            if sr:
+                zone_bits.append(f"Soporte: ${sr['support']:,.2f} ({sr['support_touches']}x tocado, ult. 1 anio)")
+                zone_bits.append(f"Resistencia: ${sr['resistance']:,.2f} ({sr['resistance_touches']}x tocado, ult. 1 anio)")
             if ma50 is not None:
                 zone_bits.append(f"MM50: ${ma50:,.2f}")
             if ma200 is not None:
                 zone_bits.append(f"MM200: ${ma200:,.2f}")
+            if rsi is not None:
+                rsi_label = "sobrecompra" if rsi > 70 else ("sobreventa" if rsi < 30 else "neutral")
+                zone_bits.append(f"RSI(14): {rsi:.0f} ({rsi_label})")
+
+            franja = franja_sintetizada(sr, ma50, rsi)
+            entry["franja_sintetizada"] = franja
+
             if zone_bits:
                 entry["entry_zone"] = " -- ".join(zone_bits) + " (calculado sobre precios historicos reales)"
     except Exception as e:
@@ -191,7 +207,7 @@ def build_entry(item):
 
     entry["news"] = yahoo_news(ticker)
 
-    score_str, checks = technical_score(price_td, ma50, ma200, lo90, hi90)
+    score_str, checks = technical_score(price_td, ma50, ma200, lo90, hi90, rsi)
     entry["technical"] = {"val": score_str or "N/D", "checks": checks}
 
     time.sleep(8)
@@ -201,7 +217,108 @@ def build_entry(item):
     return entry
 
 
-def technical_score(price, ma50, ma200, lo90, hi90):
+def calc_rsi(closes_desc, period=14):
+    """RSI clasico (0-100). closes_desc: cierres ordenados del mas reciente al mas viejo."""
+    if len(closes_desc) < period + 1:
+        return None
+    recent = closes_desc[:period + 1]
+    gains, losses = [], []
+    for i in range(period):
+        diff = recent[i] - recent[i + 1]
+        if diff > 0:
+            gains.append(diff)
+        else:
+            losses.append(-diff)
+    avg_gain = sum(gains) / period
+    avg_loss = sum(losses) / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))
+
+
+def find_support_resistance(hist_desc, current_price):
+    """
+    Busca soporte/resistencia como niveles TOCADOS MAS DE UNA VEZ, ponderados
+    por volumen -- no solo el minimo/maximo aislado. Si ningun nivel se repite,
+    cae de vuelta al minimo/maximo simple (y lo marca como tal).
+    hist_desc: lista de dicts con 'close' y 'volume', mas reciente primero.
+    """
+    pts = []
+    for h in hist_desc:
+        try:
+            c = float(h["close"])
+            v = float(h.get("volume") or 0)
+            pts.append((c, v))
+        except (ValueError, TypeError):
+            continue
+    if not pts:
+        return None
+
+    closes_only = [p[0] for p in pts]
+    lo, hi = min(closes_only), max(closes_only)
+    if hi <= lo:
+        return {"support": lo, "resistance": hi, "support_touches": 1, "resistance_touches": 1}
+
+    bin_size = (hi - lo) / 20
+    bins = {}
+    for c, v in pts:
+        idx = int((c - lo) / bin_size)
+        if idx not in bins:
+            bins[idx] = [0, 0.0]
+        bins[idx][0] += 1
+        bins[idx][1] += v
+
+    def bin_price(idx):
+        return lo + (idx + 0.5) * bin_size
+
+    below = [(idx, cnt, vol) for idx, (cnt, vol) in bins.items() if bin_price(idx) < current_price]
+    above = [(idx, cnt, vol) for idx, (cnt, vol) in bins.items() if bin_price(idx) > current_price]
+
+    def pick_best(candidates):
+        multi = [c for c in candidates if c[1] >= 2]
+        pool = multi if multi else candidates
+        if not pool:
+            return None
+        return max(pool, key=lambda c: c[2])
+
+    best_below = pick_best(below)
+    best_above = pick_best(above)
+
+    return {
+        "support": bin_price(best_below[0]) if best_below else lo,
+        "support_touches": best_below[1] if best_below else 1,
+        "resistance": bin_price(best_above[0]) if best_above else hi,
+        "resistance_touches": best_above[1] if best_above else 1,
+    }
+
+
+def franja_sintetizada(sr, ma50, rsi):
+    """
+    Sintetiza donde coinciden 2+ señales mecánicas (soporte + MM50), sin
+    generar ningun precio "recomendado" -- solo describe una franja donde
+    varias señales objetivas se superponen, y el estado del RSI como
+    contexto adicional (no como limite de la franja).
+    """
+    if not sr or ma50 is None:
+        return None
+    support = sr["support"]
+    lower = min(support, ma50)
+    upper = max(support, ma50)
+    rsi_txt = ""
+    if rsi is not None:
+        if rsi < 30:
+            rsi_txt = " RSI en sobreventa: señal adicional a favor."
+        elif rsi > 70:
+            rsi_txt = " RSI en sobrecompra: señal adicional en contra."
+        else:
+            rsi_txt = " RSI neutral: no suma ni resta a la franja."
+    return (f"${lower:,.2f} - ${upper:,.2f} (entre soporte y MM50, "
+            f"donde coinciden nivel de rebote historico + media de corto plazo).{rsi_txt} "
+            f"No es un precio recomendado, es donde se superponen señales mecánicas.")
+
+
+def technical_score(price, ma50, ma200, lo90, hi90, rsi=None):
     """
     Puntaje 100% mecanico, sin opinion: cada criterio suma o no segun
     una regla fija y verificable. No es una recomendacion, es conteo.
@@ -233,6 +350,11 @@ def technical_score(price, ma50, ma200, lo90, hi90):
         score += 1 if ok else 0
         pct = round(pos * 100)
         checks.append(f"Precio en el {pct}% del rango de 3 meses (mas cerca del {'minimo' if ok else 'maximo'})")
+    if rsi is not None:
+        total += 1
+        ok = rsi < 70
+        score += 1 if ok else 0
+        checks.append(f"RSI(14) en {rsi:.0f} ({'no sobrecomprado' if ok else 'sobrecomprado, cuidado'})")
     if total == 0:
         return None, []
     return f"{score}/{total}", checks
@@ -325,6 +447,7 @@ def render_card(e, idx):
     price_field = render_field("Precio / valuacion", e["price"]["val"], e["price"]["date"])
     range_field = render_field("Rango 3M / IPO", e["range"]["val"], e["range"]["date"])
     entry_field = render_field("Zona de entrada", e["entry_zone"])
+    franja_field = render_field("Franja de referencia tecnica (no es precio recomendado)", e.get("franja_sintetizada"))
     tech = e.get("technical", {})
     tech_val = tech.get("val", "N/D")
     if tech.get("checks"):
@@ -346,6 +469,7 @@ def render_card(e, idx):
   {source_html}
   {range_field}
   {entry_field}
+  {franja_field}
   {tech_field}
   {claude_field}
   {flow_field}
