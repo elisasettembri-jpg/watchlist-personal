@@ -69,17 +69,10 @@ def fmp_historical(ticker, days=210):
 
 
 def stooq_price(ticker):
-    url = f"https://stooq.com/q/l/?s={ticker.lower()}.us&f=sd2t2ohlcv&h&e=csv"
-    raw = http_get(url).decode("utf-8", errors="ignore")
-    reader = csv.DictReader(io.StringIO(raw))
-    row = next(reader, None)
-    if not row:
-        return None
-    try:
-        close = float(row.get("Close", "N/D"))
-        return close
-    except (ValueError, TypeError):
-        return None
+    # Deshabilitado: stooq ahora exige registro para su CSV, dejo de ser
+    # una fuente gratis sin key. Se mantiene la funcion por si vuelve a
+    # estar disponible, pero no se llama desde build_entry.
+    return None
 
 
 def yahoo_news(ticker, limit=2):
@@ -384,29 +377,50 @@ def build_sections(entries):
     return html
 
 
+def build_bench(banco):
+    if not banco:
+        return '<p style="color:var(--muted); font-size:12px;">El banco esta vacio.</p>'
+    pills = ""
+    for item in sorted(banco, key=lambda x: x.get("sector", "")):
+        ticker = item["ticker"]
+        name = item.get("name", ticker)
+        sector = item.get("sector", "Sin clasificar")
+        pills += (f'<button class="bench-pill" onclick="activarTicker(\'{ticker}\')" '
+                  f'title="{name} -- {sector}">{ticker}</button>')
+    return pills
+
+
 def main():
     with open(WATCHLIST_PATH, "r", encoding="utf-8") as f:
         watchlist = json.load(f)
 
-    print(f"Procesando {len(watchlist)} activos...")
+    activos = [item for item in watchlist if item.get("active")]
+    banco = [item for item in watchlist if not item.get("active")]
+
+    if len(activos) > 10:
+        print(f"ADVERTENCIA: hay {len(activos)} activos, mas de los 10 permitidos. Se procesan igual.")
+
+    print(f"Procesando {len(activos)} activos (titulares) + {len(banco)} en el banco (sin gastar cuota)...")
     entries = []
-    for item in watchlist:
+    for item in activos:
         print(f" - {item['ticker']}")
         entries.append(build_entry(item))
 
     sections_html = build_sections(entries)
+    bench_html = build_bench(banco)
 
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
         template = f.read()
 
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     output = template.replace("<!--SECTIONS-->", sections_html)
+    output = output.replace("<!--BENCH-->", bench_html)
     output = output.replace("<!--LAST-UPDATED-->", now_str)
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(output)
 
-    print(f"index.html generado con {len(entries)} activos.")
+    print(f"index.html generado con {len(entries)} activos y {len(banco)} en el banco.")
 
 
 if __name__ == "__main__":
