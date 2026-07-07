@@ -55,6 +55,24 @@
   .source{font-size:10px; color:var(--muted); padding:2px 0 4px;}
   a{color:var(--blue);}
   footer{border-top:1px solid var(--line); padding-top:14px; margin-top:10px; font-size:11.5px; color:var(--muted); line-height:1.6;}
+
+.bench-list{display:flex; flex-wrap:wrap; gap:8px;}
+.bench-pill{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:20px;
+  padding:7px 14px; font-family:var(--mono); font-size:12.5px; cursor:pointer;}
+.bench-pill:hover{border-color:var(--blue); color:var(--blue);}
+
+.modal-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50;
+  align-items:center; justify-content:center; padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px;
+  max-width:440px; width:100%;}
+.modal-box h3{margin:0 0 6px; font-size:16px;}
+.modal-sub{color:var(--muted); font-size:12.5px; margin:0 0 14px;}
+.swap-options{display:flex; flex-direction:column; gap:6px; max-height:320px; overflow-y:auto;}
+.swap-option{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:9px 12px;
+  cursor:pointer; font-size:13px; display:flex; justify-content:space-between;}
+.swap-option:hover{border-color:var(--red); color:var(--red);}
+.modal-actions{margin-top:14px; display:flex; justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -104,6 +122,25 @@
 </div>
 
 <!--SECTIONS-->
+
+<section id="banco-section">
+  <div class="sec-title"><h2>Banco (hace click para activar)</h2><div class="count">max. 10 titulares a la vez</div></div>
+  <div id="bench-list" class="bench-list">
+<!--BENCH-->
+  </div>
+</section>
+
+<div class="modal-overlay" id="swap-modal">
+  <div class="modal-box">
+    <h3 id="swap-title">Elegi a quien sacar</h3>
+    <p class="modal-sub" id="swap-sub"></p>
+    <div id="swap-options" class="swap-options"></div>
+    <div class="modal-actions">
+      <button class="btn" id="swap-cancel">Cancelar</button>
+    </div>
+    <div id="swap-msg"></div>
+  </div>
+</div>
 
 <footer>
   Precios y rangos calculados sobre datos historicos reales (financialmodelingprep.com, cruzado con stooq.com).
@@ -201,30 +238,38 @@ document.getElementById('btn-save-ticker').addEventListener('click', async ()=>{
   try{
     msgEl.innerHTML = '<div class="msg">Guardando...</div>';
     const {content, sha} = await ghGetFile();
-    content.push({ticker, name, tipo, sector, signal:'nd'});
+    const activosActuales = content.filter(it => it.active).length;
+    const esActivo = activosActuales < 10;
+    content.push({ticker, name, tipo, sector, signal:'nd', active: esActivo});
     await ghPutFile(content, sha, `Agregar ${ticker} via app`);
     await triggerWorkflow();
-    msgEl.innerHTML = '<div class="msg ok">Guardado. La actualizacion va a tardar 1-2 minutos.</div>';
+    if(esActivo){
+      msgEl.innerHTML = '<div class="msg ok">Guardado como titular. La actualizacion va a tardar 1-2 minutos.</div>';
+    }else{
+      msgEl.innerHTML = '<div class="msg ok">Ya hay 10 titulares -- se guardo en el banco. Hace click en el pill para activarlo cuando quieras.</div>';
+    }
     setTimeout(()=>{
       document.getElementById('f-ticker').value = '';
       document.getElementById('f-name').value = '';
       document.getElementById('f-sector').value = '';
       msgEl.innerHTML = '';
       document.getElementById('form-panel').classList.remove('open');
-    }, 2500);
+    }, 3000);
   }catch(e){
     msgEl.innerHTML = `<div class="msg err">${e.message}</div>`;
   }
 });
 
 async function removeTicker(ticker){
-  if(!confirm(`Sacar ${ticker} de la watchlist?`)) return;
+  if(!confirm(`Sacar ${ticker} de los titulares? (queda guardado en el banco, no se borra)`)) return;
   try{
     const {content, sha} = await ghGetFile();
-    const filtered = content.filter(it => it.ticker !== ticker);
-    await ghPutFile(filtered, sha, `Sacar ${ticker} via app`);
+    const idx = content.findIndex(it => it.ticker === ticker);
+    if(idx === -1) throw new Error('No se encontro el ticker');
+    content[idx].active = false;
+    await ghPutFile(content, sha, `Mover ${ticker} al banco`);
     await triggerWorkflow();
-    alert('Sacado. La actualizacion va a tardar 1-2 minutos.');
+    alert(`${ticker} pasa al banco. La actualizacion va a tardar 1-2 minutos.`);
   }catch(e){
     alert('Error: '+e.message);
   }
@@ -237,6 +282,65 @@ document.getElementById('btn-refresh-now').addEventListener('click', async ()=>{
   }else{
     alert('No se pudo disparar la corrida: '+r.reason);
   }
+});
+
+// ---------- Sistema de banco / titulares (max 10) ----------
+let tickerPendiente = null;
+
+async function activarTicker(ticker){
+  tickerPendiente = ticker;
+  const modal = document.getElementById('swap-modal');
+  const optionsEl = document.getElementById('swap-options');
+  const subEl = document.getElementById('swap-sub');
+  const msgEl = document.getElementById('swap-msg');
+  msgEl.innerHTML = '';
+  subEl.textContent = `Ya hay 10 titulares. Elegi cual sacar para hacerle lugar a ${ticker}:`;
+  optionsEl.innerHTML = '<p style="color:var(--muted); font-size:12px;">Cargando titulares actuales...</p>';
+  modal.classList.add('open');
+
+  try{
+    const {content} = await ghGetFile();
+    const activos = content.filter(it => it.active);
+    optionsEl.innerHTML = '';
+    activos.forEach(it => {
+      const div = document.createElement('div');
+      div.className = 'swap-option';
+      div.innerHTML = `<span>${it.ticker}</span><span style="color:var(--muted);">${it.name || ''}</span>`;
+      div.onclick = () => confirmarSwap(it.ticker);
+      optionsEl.appendChild(div);
+    });
+  }catch(e){
+    optionsEl.innerHTML = `<p style="color:var(--red); font-size:12px;">${e.message}</p>`;
+  }
+}
+
+async function confirmarSwap(tickerSaliente){
+  const msgEl = document.getElementById('swap-msg');
+  msgEl.innerHTML = '<div class="msg">Guardando...</div>';
+  try{
+    const {content, sha} = await ghGetFile();
+    const idxEntra = content.findIndex(it => it.ticker === tickerPendiente);
+    const idxSale = content.findIndex(it => it.ticker === tickerSaliente);
+    if(idxEntra === -1 || idxSale === -1){
+      throw new Error('No se encontro alguno de los dos tickers en watchlist.json');
+    }
+    content[idxEntra].active = true;
+    content[idxSale].active = false;
+    await ghPutFile(content, sha, `Activar ${tickerPendiente}, sacar ${tickerSaliente}`);
+    await triggerWorkflow();
+    msgEl.innerHTML = '<div class="msg ok">Listo. La actualizacion va a tardar unos minutos.</div>';
+    setTimeout(()=>{
+      document.getElementById('swap-modal').classList.remove('open');
+      msgEl.innerHTML = '';
+    }, 2200);
+  }catch(e){
+    msgEl.innerHTML = `<div class="msg err">${e.message}</div>`;
+  }
+}
+
+document.getElementById('swap-cancel').addEventListener('click', ()=>{
+  document.getElementById('swap-modal').classList.remove('open');
+  tickerPendiente = null;
 });
 </script>
 </body>
