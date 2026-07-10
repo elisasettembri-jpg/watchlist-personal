@@ -24,7 +24,7 @@
     "tipo": "accion",
     "sector": "Tierras raras",
     "signal": "buy",
-    "active": true,
+    "active": false,
     "flujo_manual": "Departamento de Defensa 15% de la empresa. Goldman Sachs Buy $77, JPMorgan Overweight",
     "flujo_manual_fecha": "2025-07"
   },
