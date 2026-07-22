@@ -415,5 +415,13 @@
     "sector": "AI",
     "signal": "nd",
     "active": false
+  },
+  {
+    "ticker": "SO",
+    "name": "The Southern Company",
+    "tipo": "accion",
+    "sector": "ENERGIA",
+    "signal": "nd",
+    "active": false
   }
 ]
