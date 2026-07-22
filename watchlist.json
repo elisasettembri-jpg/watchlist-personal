@@ -399,5 +399,13 @@
     "tipo": "privada",
     "sector": "Salud e IA",
     "active": false
+  },
+  {
+    "ticker": "QCOM",
+    "name": "Qualcomm",
+    "tipo": "accion",
+    "sector": "AI",
+    "signal": "nd",
+    "active": true
   }
 ]
