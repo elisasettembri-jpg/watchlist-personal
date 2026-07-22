@@ -62,7 +62,7 @@
     "tipo": "accion",
     "sector": "Salud e IA",
     "signal": "buy",
-    "active": true,
+    "active": false,
     "flujo_manual": "Fundador Jonathan Rothberg ~17%. ARK Invest, Glenview Capital. CFO Heather Getz vendio acciones",
     "flujo_manual_fecha": "2026-06"
   },
@@ -321,7 +321,7 @@
     "name": "SpaceX",
     "tipo": "accion",
     "sector": "Espacio",
-    "active": false
+    "active": true
   },
   {
     "ticker": "BTC",
