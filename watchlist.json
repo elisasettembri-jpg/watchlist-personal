@@ -407,5 +407,13 @@
     "sector": "AI",
     "signal": "nd",
     "active": true
+  },
+  {
+    "ticker": "WDC",
+    "name": "Western Digital",
+    "tipo": "accion",
+    "sector": "AI",
+    "signal": "nd",
+    "active": false
   }
 ]
