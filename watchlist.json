@@ -133,7 +133,7 @@
     "name": "Global X Robotics and AI ETF",
     "tipo": "etf",
     "sector": "Robotica",
-    "active": true
+    "active": false
   },
   {
     "ticker": "QQQ",
@@ -349,7 +349,7 @@
     "name": "Physical Intelligence",
     "tipo": "privada",
     "sector": "Robotica",
-    "active": false
+    "active": true
   },
   {
     "ticker": "NEURALINK",
