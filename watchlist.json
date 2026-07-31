@@ -224,7 +224,7 @@
     "name": "Eli Lilly",
     "tipo": "accion",
     "sector": "Salud e IA",
-    "active": true,
+    "active": false,
     "flujo_manual": "Simply Wall St bajo la calificacion a Hold por valuacion (31,1x fwd). Cerca de maximos de 52 semanas",
     "flujo_manual_fecha": "2026-07-01"
   },
@@ -263,7 +263,7 @@
     "name": "CrowdStrike",
     "tipo": "accion",
     "sector": "Ciberseguridad",
-    "active": false
+    "active": true
   },
   {
     "ticker": "ZS",
